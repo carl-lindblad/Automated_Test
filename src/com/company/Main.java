@@ -1,26 +1,19 @@
 package com.company;
 
 import Config.PropertiesFile;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
+
+import test.buySellNotes.testSellNotes;
 
 public class Main {
 
     public static void main(String[] args) {
-        System.setProperty("webdriver.gecko.driver", "C:\\GeckoDriver\\geckodriver.exe");
+        testSellNotes test = new testSellNotes();
         starterClass app = new starterClass();
-        identifyCustomer identify = new identifyCustomer();
-        sellNotes_regression start = new sellNotes_regression();
-        WebDriver obj = new FirefoxDriver();
-        app.start(obj);
+        System.setProperty("webdriver.gecko.driver", "C:\\GeckoDriver\\geckodriver.exe");
 
-        //identify.customer(obj);
+        app.start();
+       // test.ShouldAddValue();
 
-        start.Regression(obj);
-
-
-
-        PropertiesFile.readPropertiesFile();
     }
 }
 

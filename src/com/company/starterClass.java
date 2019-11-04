@@ -1,30 +1,55 @@
 package com.company;
 
-import Config.PropertiesFile;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
 public class starterClass{
     public static String usernameLogin;
+    functions start = new functions();
 
-    public void start(WebDriver obj){
-
-
-        functions start = new functions();
-        start.openBrowser(obj);
-        PropertiesFile.readPropertiesFile();
-        start.selectIDInDropdownByValue(obj, "dynSo", usernameLogin);
+    public void start(){
+        start.openBrowser();
+        start.selectElementInDropdownByValue( "dynSo", "TESTER 11");
         //login
         //start.clickById(obj,"dynLoginSbmt");
-        start.click(obj, "dynLoginSbmt");
+        start.clickPath( "dynLoginSbmt");
         //Select branch Hitta länk direkt till branch https://www.aktors.ee/forex-demo/index.xhtml
-        start.click(obj,"ucform:selbranch:0");
+        start.clickPath("ucform:selbranch:0");
         //Press OK
-        start.click(obj,"ucform:btnOK");
+        start.clickPath("ucform:btnOK");
         //login to Branch
-        start.click(obj,"ucform:btnlogin");
+        start.clickPath("ucform:btnlogin");
         //If someone else is logged in, kick them out
-        start.click(obj,"ucform:activeSession:affirmBtn");
+        tryClick("ucform:activeSession:affirmBtn");
+        //If session  active
+        tryClick("ucform:restoreSession:affirmBtn");
         //Logged in
+
+    }
+    private void tryClick(String id){
+        if (start.isExisting(id) && id =="ucform:activeSession:affirmBtn") {
+            try {
+                Thread.sleep(1000);
+                start.clickPath(id);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else if (start.isExisting(id) && id =="ucform:restoreSession:affirmBtn") {
+            try {
+                Thread.sleep(1000);
+                start.clickPath(id);
+                start.clickPath("ucform:sessionTotal:btn-delete-all-transactions");
+                try {
+                    Thread.sleep(1000);
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                }
+                start.clickPath("ucform:sessionTotal:confirm-reverse-all:affirmBtn");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+
     }
 }
