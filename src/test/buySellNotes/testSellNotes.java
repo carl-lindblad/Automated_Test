@@ -1,13 +1,11 @@
 package test.buySellNotes;
 
-import com.sun.xml.internal.ws.policy.EffectiveAlternativeSelector;
 import org.junit.*;
 import com.company.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import java.awt.*;
 import java.text.ParseException;
 import java.util.ArrayList;
 
@@ -16,7 +14,9 @@ public class testSellNotes {
     private static testFunctions testing = new testFunctions();
     private static starterClass app = new starterClass();
     private static functions use = new functions();
-    private static ArrayList listOfValues = new ArrayList<String>();
+    private static ArrayList values = new ArrayList<String>();
+    private static ArrayList textboxesID = new ArrayList<String>();
+
     private boolean multipleRows = false;
 
 
@@ -24,9 +24,13 @@ public class testSellNotes {
     public static void start() {
         app.start();
         testing.separateElements("C:\\DevStuff\\Automated Test\\src\\Config\\sellNotesElements\\sellNotesElements.properties");
-        listOfValues.add("1");
-        listOfValues.add("200");
-        listOfValues.add("300");
+        values.add("1");
+        values.add("200");
+        values.add("300");
+
+        textboxesID.add("txtbx_foreign_Currency1");
+        textboxesID.add("txtbx_foreign_Currency2");
+        textboxesID.add("txtbx_foreign_Currency3");
     }
 
     @Before
@@ -34,9 +38,8 @@ public class testSellNotes {
         testing.goToSneur();
     }
 
-    @Ignore
     @Test
-    @Order(1)
+    @Order(5)
     public void shouldElementExist() throws NoSuchFieldException {
         Assert.assertTrue("Not all elements could be found: ", testing.ifElementsExists());
         if (!testing.getAllElementsNotFound().isEmpty()) {
@@ -50,43 +53,37 @@ public class testSellNotes {
      * Tested and working in browser
      */
     @Test
-    @Order(2)
+    @Order(4)
     public void shouldChangeTextboxValue() throws InterruptedException, ParseException {
         testing.addNewLineIfNeccessary();
-        Assert.assertTrue(testing.isTextBoxValueChanged(listOfValues));
+        Assert.assertTrue(testing.isTextBoxValueChanged(values, textboxesID));
         testing.getAllElementsNotFound().forEach((k, v) -> System.out.println("Could not find " + k + "With value:" + v));
-
+        testing.clearSession("btn_Reverse_all_transaction", "btn_Reverse_all_transaction_confirm");
     }
-
-
-    @Ignore
     @Test
     @Order(3)
     public void shouldAddValue() throws ParseException, InterruptedException {
         testing.addNewLineIfNeccessary();
-         Assert.assertTrue("Adding x local currency should give y foreign currency", testing.isFcToLcCorrect("100"));
-        testing.removeAllValuesInTransaction();
+         Assert.assertTrue("Adding x local currency should give y foreign currency", testing.isFcToLcCorrect("100","txtbx_foreign_Currency1", "txtbx_Local_Currency"));
+        testing.removeAllValuesInTransaction("icon_TrashCan_Before_Confirmed");
     }
-
     @Test
-    @Order(4)
+    @Order(2)
     public void shouldAddAndRemoveValues() throws ParseException, InterruptedException {
         testing.addNewLineIfNeccessary();
-        Assert.assertTrue("Testing add and remove", testing.isAddedAndRemoved(listOfValues));
+        Assert.assertTrue("Testing add and remove", testing.isAddedAndRemoved(values, textboxesID, "icon_TrashCan_Before_Confirmed"));
     }
 
     @Test
-    @Order(5)
+    @Order(1)
     public void shouldConfirmAndControllSessionTotal() throws ParseException, InterruptedException {
         testing.addNewLineIfNeccessary();
-        testing.addMultipleValue(listOfValues);
-        testing.isSub_total_Correct();
-        testing.confirmValues();
-        testing.isSessionTotalCorrect();
-        testing.clearSession();
+        testing.addValuesToTextboxes(values, textboxesID);
+        testing.isSub_total_Correct("hdr_Sub_total_Exchange_Sum");
+        testing.confirmValues("btn_Confirm");
+        testing.isSessionTotalCorrect("hdr_Session_Total_LC", "hdr_Session_Total_FC");
+        testing.clearSession("btn_Reverse_all_transaction", "btn_Reverse_all_transaction_confirm");
     }
-
-
     /**
      * Tested and work in browser
      *

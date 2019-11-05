@@ -4,10 +4,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 import Config.*;
-import com.sun.xml.internal.ws.policy.EffectiveAlternativeSelector;
 
 
 public class testFunctions {
@@ -22,6 +20,8 @@ public class testFunctions {
     private HashMap<String, String> allElementsNotFound = new HashMap<String, String>();
     private double totalValueLc;
     private double totalValueFc;
+    private static String actionFieldId = "txtbx_Action_box";
+    private static String btnConfirmId = "btn_Confirm";
 
     public double getTotalValueFc() {
         return totalValueFc;
@@ -99,6 +99,7 @@ public class testFunctions {
     public void separateElements(String fileInputPath) {
         this.allElements = get.readPropertiesFile(fileInputPath);
         setAllElements(this.allElements);
+        System.out.println(getAllElements().size());
         for (Map.Entry<String, String> key : allElements.entrySet()) {
             if (key.getKey().contains("hdr_")) {
                 this.allHeaders.put(key.getKey(), key.getValue());
@@ -135,7 +136,6 @@ public class testFunctions {
                     this.allElementsNotFound.put(identifier.getKey(), identifier.getValue());
                     setElementsNotfound(allElementsNotFound);
                     exists = true;
-                    //throw new NoSuchFieldException("Identifier could not be found: " + identifier.getKey()+"||"+identifier.getValue());
                 }
             } else {
                 exists = use.isExisting(identifier.getValue());
@@ -151,9 +151,9 @@ public class testFunctions {
 
     }
 
-    public boolean isTextBoxValueChanged(ArrayList<String> values) throws InterruptedException, ParseException {
+    public boolean isTextBoxValueChanged(ArrayList<String> values, ArrayList<String> checkboxesID) throws InterruptedException, ParseException {
         boolean isChanged = false;
-        addMultipleValue(values);
+        addValuesToTextboxes(values, checkboxesID);
         for (Map.Entry<String, String> identifier : getAllTextboxes().entrySet()) {
             String preValue = use.getValue(identifier.getValue());
             use.setTextBoxValue(identifier.getValue(), values.get(0), true);
@@ -175,20 +175,28 @@ public class testFunctions {
     }
 
     public void goToSneur() throws InterruptedException {
-        String key = getAllTextboxes().get("txtbx_Action_box");
+        String key = getAllTextboxes().get(actionFieldId);
         use.setTextBoxValue(key, "SNEUR", true);
     }
 
-    public boolean isFcToLcCorrect(String value) throws ParseException, InterruptedException {
+    public boolean isFcToLcCorrect(String value, String foreignCurrencyID, String localCurrencyID) throws ParseException, InterruptedException {
         HashMap<String, String> textboxes = getAllTextboxes();
-        String foreignCurrency = use.getValue(textboxes.get("txtbx_foreign_Currency"));
-        String localCurrency = use.getValue(textboxes.get("txtbx_Local_Currency"));
+        use.setTextBoxValue(textboxes.get(foreignCurrencyID), value ,true);
+        String foreignCurrency = use.getValue(textboxes.get(foreignCurrencyID));
+        String localCurrency = use.getValue(textboxes.get(localCurrencyID));
         String rate = use.getValue(textboxes.get("txtbx_rate"));
-        double r = Math.round(use.toDouble(rate));
-        double fc = use.toDouble(foreignCurrency);
-        double lc = use.toDouble(localCurrency);
+
+        double r = (double) Math.round(use.toDouble(rate)*100)/100;
+        double fc = Math.round(use.toDouble(foreignCurrency));
+        double lc = Math.round(use.toDouble(localCurrency));
         double presumedLC = fc * r;
         setTotalValueLc(lc);
+
+        System.out.println(r);
+        System.out.println(fc);
+        System.out.println(lc);
+        System.out.println(presumedLC);
+
         if (lc == presumedLC) {
             return true;
         } else {
@@ -196,60 +204,59 @@ public class testFunctions {
         }
     }
 
-    public void addValue(String value) throws ParseException, InterruptedException {
+    public void addValue(String value, String textBoxID) throws ParseException, InterruptedException {
         HashMap<String, String> textboxes = getAllTextboxes();
         //isTextBoxValueChanged(value);
-        use.setTextBoxValue(textboxes.get("txtbx_foreign_Currency1"), value, true);
-        isFcToLcCorrect(value);
-
+        use.setTextBoxValue(textboxes.get(textBoxID), value, true);
     }
 
-    public void addMultipleValue(ArrayList<String> listOfValues) throws ParseException, InterruptedException {
+    public void addValuesToTextboxes(ArrayList<String> values, ArrayList<String> textBoxes) throws ParseException, InterruptedException {
         HashMap<String, String> textboxes = getAllTextboxes();
-        String value1 = listOfValues.get(0);
-        String value2 = listOfValues.get(1);
-        String value3 = listOfValues.get(2);
-        use.setTextBoxValue(textboxes.get("txtbx_foreign_Currency1"), value1, true);
+        String value1 = values.get(0);
+        String value2 = values.get(1);
+        String value3 = values.get(2);
+        use.setTextBoxValue(textboxes.get(textBoxes.get(0)), value1, true);
         goToSneur();
-        use.setTextBoxValue(textboxes.get("txtbx_foreign_Currency2"), value2, true);
+        use.setTextBoxValue(textboxes.get(textBoxes.get(1)), value2, true);
         goToSneur();
-        use.setTextBoxValue(textboxes.get("txtbx_foreign_Currency3"), value3, true);
+        use.setTextBoxValue(textboxes.get(textBoxes.get(2)), value3, true);
     }
 
-    public void confirmValues() {
+    public void confirmValues(String btnID) {
         HashMap<String, String> allbuttons = getAllButton();
-        use.clickPath(allbuttons.get("btn_Confirm"));
+        use.clickPath(allbuttons.get(btnID));
     }
 
-    public void removeAllValuesInTransaction() {
-        while (use.isExisting(getAllIcons().get("icon_TrashCan_Before_Confirmed"))) {
-            removeValueInTransaction();
+    public void removeAllValuesInTransaction(String removeBtnId) {
+        while (use.isExisting(getAllIcons().get(removeBtnId))) {
+            removeValueInTransaction(removeBtnId);
             try {
 
                 Thread.sleep(1000);
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void removeValueInTransaction() {
+    public void removeValueInTransaction(String removeBtnId) {
 
-        if (use.isExisting(getAllIcons().get("icon_TrashCan_Before_Confirmed"))) {
-            use.clickPath(getAllIcons().get("icon_TrashCan_Before_Confirmed"));
+        if (use.isExisting(getAllIcons().get(removeBtnId))) {
+            use.clickPath(getAllIcons().get(removeBtnId));
         }
     }
 
-    public boolean isAddedAndRemoved(ArrayList<String> listOfValues) throws ParseException, InterruptedException {
-        addMultipleValue(listOfValues);
-        removeAllValuesInTransaction();
-        return !use.isExisting(getAllIcons().get("icon_TrashCan_Before_Confirmed"));
+    public boolean isAddedAndRemoved(ArrayList<String> listOfValues, ArrayList<String> textboxesID, String removeBtnId) throws ParseException, InterruptedException {
+        addValuesToTextboxes(listOfValues, textboxesID);
+        System.out.println(textboxesID.get(0));
+        System.out.println(removeBtnId);
+        removeAllValuesInTransaction(removeBtnId);
+        return !use.isExisting(getAllIcons().get(removeBtnId));
     }
 
-    public boolean isSessionTotalCorrect() throws ParseException, InterruptedException {
-        String totalLc = use.getValue(getAllHeaders().get("hdr_Session_Total_LC"));
-        String totalFc = use.getValue(getAllHeaders().get("hdr_Session_Total_Fc"));
+    public boolean isSessionTotalCorrect(String sessionTotalLc, String sessionTotalFc) throws ParseException, InterruptedException {
+        String totalLc = use.getValue(getAllHeaders().get(sessionTotalLc));
+        String totalFc = use.getValue(getAllHeaders().get(sessionTotalFc));
 
 
         double fc = use.toDouble(totalFc);
@@ -267,8 +274,8 @@ public class testFunctions {
 
 
     //Need id cant reach subtotal with xpath.
-    public boolean isSub_total_Correct() throws ParseException, InterruptedException {
-        String tempSum = use.getValue(getAllHeaders().get("hdr_Sub_total_Exchange_Sum"));
+    public boolean isSub_total_Correct(String subTotalExchangeSumId) throws ParseException, InterruptedException {
+        String tempSum = use.getValue(getAllHeaders().get(subTotalExchangeSumId));
         double sum = use.toDouble(tempSum);
         if (sum == getTotalValueLc()) {
             return true;
@@ -277,14 +284,16 @@ public class testFunctions {
         }
 
     }
-    public void clearSession(){
-        System.out.println(getAllButton().get("btn_Reverse_all_transaction"));
-        System.out.println(getAllButton().get("btn_Reverse_all_transaction_confirm"));
-        use.clickPath(getAllButton().get("btn_Reverse_all_transaction"));
-        use.clickPath(getAllButton().get("btn_Reverse_all_transaction_confirm"));
+
+    public void clearSession(String reverseBtnId, String reverseBtnConfirmId) {
+        System.out.println(getAllButton().get(reverseBtnId));
+        System.out.println(getAllButton().get(reverseBtnConfirmId));
+        use.clickPath(getAllButton().get(reverseBtnId));
+        use.clickPath(getAllButton().get(reverseBtnConfirmId));
     }
+
     public void addNewLineIfNeccessary() throws InterruptedException {
-        if(!use.isExisting(getAllButton().get("btn_Confirm"))){
+        if (!use.isExisting(getAllButton().get(btnConfirmId))) {
             goToSneur();
         }
     }
