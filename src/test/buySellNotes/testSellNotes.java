@@ -14,30 +14,49 @@ public class testSellNotes {
     private static testFunctions testing = new testFunctions();
     private static starterClass app = new starterClass();
     private static functions use = new functions();
-    private static ArrayList values = new ArrayList<String>();
-    private static ArrayList textboxesID = new ArrayList<String>();
+    private static ArrayList<String> values = new ArrayList<String>();
+    private static ArrayList<String> foreignsTextboxes = new ArrayList<String>();
+    private static ArrayList<String> localTextboxes = new ArrayList<String>();
 
-    private boolean multipleRows = false;
-
-
+    private static ArrayList<String> ratesID = new ArrayList<String>();
     @BeforeClass
     public static void start() {
         app.start();
         testing.separateElements("C:\\DevStuff\\Automated Test\\src\\Config\\sellNotesElements\\sellNotesElements.properties");
-        values.add("1");
+        setValues();
+
+    }
+
+
+    private static void setValues(){
+        values.add("5");
         values.add("200");
         values.add("300");
-
-        textboxesID.add("txtbx_foreign_Currency1");
-        textboxesID.add("txtbx_foreign_Currency2");
-        textboxesID.add("txtbx_foreign_Currency3");
+        foreignsTextboxes.add("txtbx_foreign_Currency1");
+        foreignsTextboxes.add("txtbx_foreign_Currency2");
+        foreignsTextboxes.add("txtbx_foreign_Currency3");
+        ratesID.add("txtbx_rate1");
+        ratesID.add("txtbx_rate2");
+        ratesID.add("txtbx_rate3");
+        localTextboxes.add("txtbx_Local_Currency1");
+        localTextboxes.add("txtbx_Local_Currency2");
+        localTextboxes.add("txtbx_Local_Currency3");
+        testing.setActionFieldId("Sneur");
+        testing.setLists(foreignsTextboxes, ratesID, values, localTextboxes);
     }
 
     @Before
     public void goToSneur() throws InterruptedException {
-        testing.goToSneur();
+        testing.actionField("Sneur");
     }
 
+    /**
+     * Existence of elements
+     * TODO
+     * - Add all elements
+     *
+     * @throws NoSuchFieldException
+     */
     @Test
     @Order(5)
     public void shouldElementExist() throws NoSuchFieldException {
@@ -50,93 +69,67 @@ public class testSellNotes {
     }
 
     /**
-     * Tested and working in browser
+     * Type: Functional logic
+     * Name: Switch of currency
      */
     @Test
     @Order(4)
     public void shouldChangeTextboxValue() throws InterruptedException, ParseException {
         testing.addNewLineIfNeccessary();
-        Assert.assertTrue(testing.isTextBoxValueChanged(values, textboxesID));
+        Assert.assertTrue(testing.isTextBoxValueChanged());
         testing.getAllElementsNotFound().forEach((k, v) -> System.out.println("Could not find " + k + "With value:" + v));
         testing.clearSession("btn_Reverse_all_transaction", "btn_Reverse_all_transaction_confirm");
     }
+
+    /**
+     * Type: Functional logic
+     * Name: Auto Calculation
+     *
+     * @throws ParseException
+     * @throws InterruptedException
+     */
     @Test
     @Order(3)
-    public void shouldAddValue() throws ParseException, InterruptedException {
+    public void shouldCalculateCorrect() throws ParseException, InterruptedException {
         testing.addNewLineIfNeccessary();
-         Assert.assertTrue("Adding x local currency should give y foreign currency", testing.isFcToLcCorrect("100","txtbx_foreign_Currency1", "txtbx_Local_Currency"));
+        Assert.assertTrue("Adding x local currency should give y foreign currency", testing.isFcToLcCorrect("100", "txtbx_foreign_Currency1", "txtbx_Local_Currency1"));
         testing.removeAllValuesInTransaction("icon_TrashCan_Before_Confirmed");
     }
+
+    /**
+     * Type: Functional logic
+     * Name: Adding value
+     *
+     * @throws ParseException
+     * @throws InterruptedException
+     */
     @Test
     @Order(2)
     public void shouldAddAndRemoveValues() throws ParseException, InterruptedException {
         testing.addNewLineIfNeccessary();
-        Assert.assertTrue("Testing add and remove", testing.isAddedAndRemoved(values, textboxesID, "icon_TrashCan_Before_Confirmed"));
+        Assert.assertTrue("Testing add and remove", testing.isAddedAndRemoved( "icon_TrashCan_Before_Confirmed"));
     }
 
+    /**
+     * Type: Click effects / Functional Logic
+     * Name: Confirm & Sub-total Exchange
+     *
+     * @throws ParseException
+     * @throws InterruptedException
+     */
     @Test
     @Order(1)
     public void shouldConfirmAndControllSessionTotal() throws ParseException, InterruptedException {
         testing.addNewLineIfNeccessary();
-        testing.addValuesToTextboxes(values, textboxesID);
-        testing.isSub_total_Correct("hdr_Sub_total_Exchange_Sum");
+        Assert.assertTrue(testing.isSub_total_Correct("hdr_Sub_total_Exchange_Sum"));
         testing.confirmValues("btn_Confirm");
         testing.isSessionTotalCorrect("hdr_Session_Total_LC", "hdr_Session_Total_FC");
         testing.clearSession("btn_Reverse_all_transaction", "btn_Reverse_all_transaction_confirm");
     }
+
     /**
-     * Tested and work in browser
-     *
      * @throws ParseException
      */
-
-    @Ignore
-    @Test
-    @Order(4)
-    public void shousdConfirm() throws ParseException, InterruptedException {
-        shouldAddValue();
-        use.clickPath("ucform:execute-button");
-
-
-        //Session total
-        double fcInSessionTotal = use.toDouble("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/div[1]/div/div/table/tbody/tr/td[2]/span");
-        double lcInSessionTotal = use.toDouble("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/div[1]/div/div/table/tbody/tr/td[3]/span");
-
-        if (fcInSessionTotal == 105.0) {
-            fcInSessionTotal -= 5;
-            lcInSessionTotal = 1064.66;
-        }
-        Assert.assertEquals("fcInSessionTotal", 100.00, fcInSessionTotal, 0.0);
-        Assert.assertEquals("lcInSessionTotal", 1064.66, lcInSessionTotal, 0.0);
-        //In
-        double in = use.toDouble("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/div[3]/span");
-        double adjustment = use.toDouble("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/table[1]/tbody/tr[1]/td[2]/span");
-        double fee = use.toDouble("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/table[1]/tbody/tr[1]/td[2]/span");
-        double profit = use.toDouble("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/table[1]/tbody/tr[3]/td[2]/span");
-
-        double calcIn = adjustment + lcInSessionTotal;
-        if (multipleRows == false) {
-            Assert.assertEquals("Controll of cashier", calcIn, in, 0.0);
-        } else {
-            Assert.assertEquals("Controll of cashier", 3194.0, in, 0.0);
-
-        }
-
-        //Controll of message
-        String msg = use.getValue("/html/body/div[2]/div[2]/div/form/div[1]/div[1]/div/ul/li/span");
-        Assert.assertEquals("msgControll", "Transaction completed", msg);
-        emptySessionTotal();
-    }
-
-    private void emptySessionTotal() {
-        use.clickPath("ucform:sessionTotal:btn-delete-all-transactions");
-        use.clickPath("ucform:sessionTotal:confirm-reverse-all:affirmBtn");
-    }
-
-    /**
-     * WORKS IN BROWSER
-     */
-
     @Ignore
     @Test
     @Order(5)
@@ -145,7 +138,7 @@ public class testSellNotes {
         Assert.assertFalse("No value view rate: ", isChecked);
 
         boolean preRate = use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/div[1]/div/div/table/tbody/tr/td[2]/div/span"); //use.getValueCss("tr.even:nth-child(1) > td:nth-child(2) > div:nth-child(3) > span:nth-child(1)");// use.getValueXpath("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/div[1]/div/div/table/tbody/tr/td[2]/div/span");
-        //shouldAddValue();
+        //shouldCalculateCorrect();
 
         try {
             //shouldConfirm();
@@ -185,7 +178,7 @@ public class testSellNotes {
     @Order(6)
     public void ShouldDeleteRowInSessionTotal() throws InterruptedException {
 
-        //shouldAddValue();
+        //shouldCalculateCorrect();
         try {
             //shouldConfirm();
         } catch (Exception e) {
@@ -205,17 +198,15 @@ public class testSellNotes {
         use.setTextBoxValue("ibform:actionCode_input", "SNEUR", true);
         use.setTextBoxValue("ibform:actionCode_input", "SNEUR", true);
         use.setTextBoxValue("ibform:actionCode_input", "SNEUR", true);
-        multipleRows = true;
-        //shouldAddValue();
+        //shouldCalculateCorrect();
         try {
             //shouldConfirm();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        multipleRows = false;
 
-        emptySessionTotal();
+        //emptySessionTotal();
         try {
             Thread.sleep(500);
 
@@ -225,112 +216,4 @@ public class testSellNotes {
         String messageNoRecords = use.getValue("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/div[1]/div/div/table/tbody/tr/td");
         Assert.assertEquals("No records message not found", "No records", messageNoRecords);
     }
-
-
-
-    /**
-     * Not tested
-     */
-
-/*    public void shouldDeleteRowBeforeTransaction() {
-        addValue();
-
-        if (use.existsID("ucform:vexla-table:0:delete-row-button"))
-        {
-            use.clickPath("ucform:vexla-table:0:delete-row-button");
-        }
-        else
-        {
-            System.out.println("Trashcan icon in transaction row could not be found");
-        }
-
-        Assert.assertEquals("removal of ");
-
-        String getValuefromFromXpath = "/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[2]/div[1]/div[1]/div/div/table/tbody/tr/td[2]/div/span";
-        boolean trashCanExists = false;
-        while (trashCanExists == true) {
-            String RemoveTrashCan;
-            if (getValuefromFromXpath != "") {
-                boolean isRemovedFully; //No records found.
-                break;
-            }
-        }
-    }*/
-/*
-    private boolean shouldCheckHeadersInReverseTransaction() {
-        List<Boolean> listWithExistingHeaders = Collections.emptyList();
-        boolean dateFound, User,SeqNo,TransactionName,TransactionNumber, Rate,Amount, LocalAmount, Workstation, InventoryCode, SourceCashdesk, TargetCshdesk, DebitAccount, CreditAccount, ExtTransactionNumber, TransactionState, DoubleCheckedBy, SessionId, ReversalTransactionSeqNo, ReversedTransactionSeqNo, Description, Product= false;
-        switch (true) {
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[1]/td[1]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[1]/td[2]"):
-                dateFound = true;
-                listWithExistingHeaders.add(dateFound);
-                break;
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[2]/td[3]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[2]/td[4]"):
-                User = true;
-                listWithExistingHeaders.add(User);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[3]/td[1]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[3]/td[2]"):
-                SeqNo = true;
-                listWithExistingHeaders.add(SeqNo);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[3]/td[3]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[3]/td[4]"):
-                TransactionName = true;
-                listWithExistingHeaders.add(TransactionName);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[4]/td[1]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[4]/td[2]"):
-                TransactionNumber = true;
-                listWithExistingHeaders.add(TransactionNumber);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[4]/td[3]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[4]/td[4]/span"):
-                Rate = true;
-                listWithExistingHeaders.add(Rate);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[5]/td[1]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[5]/td[2]/span"):
-                Amount = true;
-                listWithExistingHeaders.add(Amount);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[5]/td[3]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[5]/td[4]/span"):
-                LocalAmount = true;
-                listWithExistingHeaders.add(LocalAmount);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[6]/td[1]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[6]/td[2]"):
-                Workstation = true;
-                listWithExistingHeaders.add(Workstation);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[6]/td[3]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[6]/td[4]"):
-                InventoryCode = true;
-                listWithExistingHeaders.add(InventoryCode);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[7]/td[1]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[7]/td[2]"):
-                SourceCashdesk = true;
-                listWithExistingHeaders.add(SourceCashdesk);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[7]/td[3]/label") && use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[7]/td[4]"):
-                TargetCshdesk = true;
-                listWithExistingHeaders.add(TargetCshdesk);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[8]/td[1]/label"):
-                DebitAccount = true;
-                listWithExistingHeaders.add(DebitAccount);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[8]/td[3]/label"):
-                CreditAccount = true;
-                listWithExistingHeaders.add(CreditAccount);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[9]/td[1]/label"):
-                ExtTransactionNumber = true;
-                listWithExistingHeaders.add(ExtTransactionNumber);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[9]/td[3]/label"):
-                TransactionState = true;
-                listWithExistingHeaders.add(TransactionState);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[10]/td[1]/label"):
-                DoubleCheckedBy = true;
-                listWithExistingHeaders.add(DoubleCheckedBy);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[10]/td[3]/label"):
-                SessionId = true;
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[11]/td[1]/label"):
-                ReversalTransactionSeqNo = true;
-                listWithExistingHeaders.add(ReversalTransactionSeqNo);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[11]/td[3]/label"):
-                ReversedTransactionSeqNo = true;
-                listWithExistingHeaders.add(ReversedTransactionSeqNo);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[12]/td[1]/label"):
-                Description = true;
-                listWithExistingHeaders.add(Description);
-            case use.isXpathVisible("/html/body/div[2]/div[2]/div/form/div[1]/div[2]/div[1]/div[1]/div[1]/div/table/tbody/tr[12]/td[3]/label"):
-                Product = true;
-                listWithExistingHeaders.add(Product);
-        }
-
-        return true;
-    }*/
-
-
 }

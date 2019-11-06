@@ -18,10 +18,28 @@ public class testFunctions {
     private HashMap<String, String> allButton = new HashMap<String, String>();
     private HashMap<String, String> allIcons = new HashMap<String, String>();
     private HashMap<String, String> allElementsNotFound = new HashMap<String, String>();
-    private double totalValueLc;
-    private double totalValueFc;
-    private static String actionFieldId = "txtbx_Action_box";
+    private static String  actionFieldCommand;
+    private ArrayList<String> rates = new ArrayList<String>();
+    private ArrayList<String> foreignTextBoxes = new ArrayList<String>();
+    private ArrayList<String> localTextBoxes = new ArrayList<String>();
+
+    private ArrayList<String> values = new ArrayList<String>();
+
+    private double totalValueLc = 0;
+    private double totalValueFc = 0;
+    public void setActionFieldId(String actionFieldCommand){
+        this.actionFieldCommand = actionFieldCommand;
+    }
+    public void setLists(ArrayList<String> foreigntextboxes, ArrayList<String> rates, ArrayList<String> values, ArrayList<String> localTextBoxes){
+        this.rates = rates;
+        this.foreignTextBoxes = foreigntextboxes;
+        this.values = values;
+        this.localTextBoxes = localTextBoxes;
+    }
+
+
     private static String btnConfirmId = "btn_Confirm";
+
 
     public double getTotalValueFc() {
         return totalValueFc;
@@ -56,7 +74,7 @@ public class testFunctions {
     }
 
     public double getTotalValueLc() {
-        return totalValueLc;
+        return this.totalValueLc;
     }
 
 
@@ -99,7 +117,6 @@ public class testFunctions {
     public void separateElements(String fileInputPath) {
         this.allElements = get.readPropertiesFile(fileInputPath);
         setAllElements(this.allElements);
-        System.out.println(getAllElements().size());
         for (Map.Entry<String, String> key : allElements.entrySet()) {
             if (key.getKey().contains("hdr_")) {
                 this.allHeaders.put(key.getKey(), key.getValue());
@@ -151,9 +168,9 @@ public class testFunctions {
 
     }
 
-    public boolean isTextBoxValueChanged(ArrayList<String> values, ArrayList<String> checkboxesID) throws InterruptedException, ParseException {
+    public boolean isTextBoxValueChanged() throws InterruptedException, ParseException {
         boolean isChanged = false;
-        addValuesToTextboxes(values, checkboxesID);
+        addValuesToTextboxes();
         for (Map.Entry<String, String> identifier : getAllTextboxes().entrySet()) {
             String preValue = use.getValue(identifier.getValue());
             use.setTextBoxValue(identifier.getValue(), values.get(0), true);
@@ -174,52 +191,63 @@ public class testFunctions {
         }
     }
 
-    public void goToSneur() throws InterruptedException {
-        String key = getAllTextboxes().get(actionFieldId);
-        use.setTextBoxValue(key, "SNEUR", true);
+    public void actionField(String command) throws InterruptedException {
+        String key = getAllTextboxes().get("txtbx_Action_box");
+        use.setTextBoxValue(key, command, true);
     }
 
     public boolean isFcToLcCorrect(String value, String foreignCurrencyID, String localCurrencyID) throws ParseException, InterruptedException {
         HashMap<String, String> textboxes = getAllTextboxes();
-        use.setTextBoxValue(textboxes.get(foreignCurrencyID), value ,true);
+        use.setTextBoxValue(textboxes.get(foreignCurrencyID), value, true);
         String foreignCurrency = use.getValue(textboxes.get(foreignCurrencyID));
         String localCurrency = use.getValue(textboxes.get(localCurrencyID));
-        String rate = use.getValue(textboxes.get("txtbx_rate"));
+        String rate = use.getValue(textboxes.get("txtbx_rate1"));
 
-        double r = (double) Math.round(use.toDouble(rate)*100)/100;
-        double fc = Math.round(use.toDouble(foreignCurrency));
-        double lc = Math.round(use.toDouble(localCurrency));
-        double presumedLC = fc * r;
-        setTotalValueLc(lc);
+        return isCalculatedLcCorrect(use.toDouble(rate), use.toDouble(foreignCurrency), use.toDouble(localCurrency));
 
-        System.out.println(r);
-        System.out.println(fc);
-        System.out.println(lc);
-        System.out.println(presumedLC);
+    }
 
-        if (lc == presumedLC) {
-            return true;
-        } else {
+    public boolean isCalculatedLcCorrect(double rate, double foreignCurrency, double localCurrency){
+
+        double r = use.roundToTwoDecimals(rate);
+        double fc = use.roundToTwoDecimals(foreignCurrency);
+        double lc = use.roundToTwoDecimals(localCurrency);
+        double presumedLC = use.roundToTwoDecimals(fc * r);
+
+        System.out.println("rate = "+rate);
+        System.out.println("foreign = "+fc);
+        System.out.println("local = "+lc);
+        System.out.println("presumed lc = "+presumedLC);
+        double diff = presumedLC - lc;
+        System.out.println(diff);
+        if(diff <= 1 || diff >= -1)
+        {
+
+            setTotalValueLc(presumedLC);
+            return  true;
+        }
+        else {
             return false;
         }
+
     }
 
-    public void addValue(String value, String textBoxID) throws ParseException, InterruptedException {
+    public void addValuesToTextboxes() throws InterruptedException, ParseException {
         HashMap<String, String> textboxes = getAllTextboxes();
-        //isTextBoxValueChanged(value);
-        use.setTextBoxValue(textboxes.get(textBoxID), value, true);
-    }
+        int i = 0;
+        for (String value: values) {
+            use.setTextBoxValue(textboxes.get(foreignTextBoxes.get(i)), values.get(i), true);
+            double theRate= use.toDouble(use.getValue(textboxes.get(rates.get(i))));
+            double lc= use.toDouble(use.getValue(textboxes.get(localTextBoxes.get(i))));
+            double fc = use.toDouble(values.get(i));
+            setTotalValueFc(fc);
+            isCalculatedLcCorrect(theRate, fc, lc);
 
-    public void addValuesToTextboxes(ArrayList<String> values, ArrayList<String> textBoxes) throws ParseException, InterruptedException {
-        HashMap<String, String> textboxes = getAllTextboxes();
-        String value1 = values.get(0);
-        String value2 = values.get(1);
-        String value3 = values.get(2);
-        use.setTextBoxValue(textboxes.get(textBoxes.get(0)), value1, true);
-        goToSneur();
-        use.setTextBoxValue(textboxes.get(textBoxes.get(1)), value2, true);
-        goToSneur();
-        use.setTextBoxValue(textboxes.get(textBoxes.get(2)), value3, true);
+            if(i != values.size()-1) {
+                actionField(actionFieldCommand);
+            }
+            i++;
+        }
     }
 
     public void confirmValues(String btnID) {
@@ -239,45 +267,41 @@ public class testFunctions {
         }
     }
 
-    public void removeValueInTransaction(String removeBtnId) {
+    private void removeValueInTransaction(String removeBtnId) {
 
         if (use.isExisting(getAllIcons().get(removeBtnId))) {
             use.clickPath(getAllIcons().get(removeBtnId));
         }
     }
 
-    public boolean isAddedAndRemoved(ArrayList<String> listOfValues, ArrayList<String> textboxesID, String removeBtnId) throws ParseException, InterruptedException {
-        addValuesToTextboxes(listOfValues, textboxesID);
-        System.out.println(textboxesID.get(0));
-        System.out.println(removeBtnId);
+    public boolean isAddedAndRemoved(String removeBtnId) throws InterruptedException, ParseException {
+        addValuesToTextboxes();
         removeAllValuesInTransaction(removeBtnId);
         return !use.isExisting(getAllIcons().get(removeBtnId));
     }
 
-    public boolean isSessionTotalCorrect(String sessionTotalLc, String sessionTotalFc) throws ParseException, InterruptedException {
+    public void isSessionTotalCorrect(String sessionTotalLc, String sessionTotalFc) throws ParseException, InterruptedException {
         String totalLc = use.getValue(getAllHeaders().get(sessionTotalLc));
         String totalFc = use.getValue(getAllHeaders().get(sessionTotalFc));
 
 
         double fc = use.toDouble(totalFc);
         double lc = use.toDouble(totalLc);
-        setTotalValueLc(lc);
-        setTotalValueFc(fc);
 
-        System.out.println(fc);
-        System.out.println(lc);
-        System.out.println(getTotalValueLc());
-        System.out.println(getTotalValueFc());
 
-        return getTotalValueLc() == lc && getTotalValueFc() == fc;
     }
 
 
     //Need id cant reach subtotal with xpath.
     public boolean isSub_total_Correct(String subTotalExchangeSumId) throws ParseException, InterruptedException {
+        addValuesToTextboxes();
         String tempSum = use.getValue(getAllHeaders().get(subTotalExchangeSumId));
         double sum = use.toDouble(tempSum);
-        if (sum == getTotalValueLc()) {
+        System.out.println("total lc = "+getTotalValueLc());
+        System.out.println("total fc = "+getTotalValueFc());
+        System.out.println("total sum = "+sum);
+        double diff = sum-getTotalValueLc();
+        if (diff < 1 ) {
             return true;
         } else {
             return false;
@@ -286,15 +310,13 @@ public class testFunctions {
     }
 
     public void clearSession(String reverseBtnId, String reverseBtnConfirmId) {
-        System.out.println(getAllButton().get(reverseBtnId));
-        System.out.println(getAllButton().get(reverseBtnConfirmId));
         use.clickPath(getAllButton().get(reverseBtnId));
         use.clickPath(getAllButton().get(reverseBtnConfirmId));
     }
 
     public void addNewLineIfNeccessary() throws InterruptedException {
         if (!use.isExisting(getAllButton().get(btnConfirmId))) {
-            goToSneur();
+            actionField("Sneur");
         }
     }
 }

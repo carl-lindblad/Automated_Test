@@ -38,7 +38,7 @@ public class functions {
 
     /**
      * @param
-     * @param id
+     * @param
      * @param userValue
      */
     public void selectElementInDropdownByValue(String key, String userValue) {
@@ -49,7 +49,7 @@ public class functions {
 
     /**
      * @param
-     * @param id
+     * @param
      * @return the element with the param ID
      */
     public WebElement selectElement(String key) {
@@ -96,12 +96,10 @@ public class functions {
         try {
             if (isID(key)) {
                 wait.until(ExpectedConditions.elementToBeClickable(By.id(key))).click();
-                Thread.sleep(2000);
             } else {
                 wait.until(ExpectedConditions.elementToBeClickable(By.xpath(key))).click();
-                Thread.sleep(2000);
             }
-        } catch (TimeoutException | InterruptedException e) {
+        } catch (TimeoutException e) {
             System.out.println("Something went wrong when clicking identifier: " + key);
         }
 
@@ -200,6 +198,10 @@ public class functions {
             return 0;
         }
 
+    }
+
+    public double roundToTwoDecimals(double value){
+        return Math.floor(value*1000.00)/1000.00;
     }
 
 
